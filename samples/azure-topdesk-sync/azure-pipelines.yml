@@ -1,0 +1,80 @@
+# Scheduled pipeline that syncs Azure resource tags (Owner, Team) into
+# matching TopDesk CMDB Configuration Items.
+#
+# Before running, create a secret variable group named
+# "azure-topdesk-sync-secrets" (see README.md for the required variables)
+# and link it to this pipeline.
+
+trigger: none # this pipeline is schedule-driven only, not run on every push
+
+schedules:
+  - cron: "0 3 * * *" # every day at 03:00 UTC; adjust to your change window
+    displayName: Nightly Azure -> TopDesk tag sync
+    branches:
+      include:
+        - main
+    always: true
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  - group: azure-topdesk-sync-secrets
+
+stages:
+  - stage: Test
+    displayName: Run Pester tests
+    jobs:
+      - job: PesterTests
+        displayName: Pester tests
+        steps:
+          - task: PowerShell@2
+            displayName: Install Pester
+            inputs:
+              targetType: inline
+              pwsh: true
+              script: |
+                Install-Module -Name Pester -Scope CurrentUser -Force -SkipPublisherCheck -MinimumVersion 5.5.0
+
+          - task: PowerShell@2
+            displayName: Run tests
+            inputs:
+              targetType: inline
+              pwsh: true
+              script: |
+                Import-Module Pester -MinimumVersion 5.5.0
+                $result = Invoke-Pester -Path "$(System.DefaultWorkingDirectory)/samples/azure-topdesk-sync/tests/Sync.Tests.ps1" -PassThru
+                if ($result.FailedCount -gt 0) {
+                  throw "$($result.FailedCount) Pester test(s) failed."
+                }
+
+  - stage: Sync
+    displayName: Sync Azure tags to TopDesk
+    dependsOn: Test
+    jobs:
+      - job: RunSync
+        displayName: Run sync script
+        steps:
+          - task: PowerShell@2
+            displayName: Install Az PowerShell module
+            inputs:
+              targetType: inline
+              pwsh: true
+              script: |
+                Install-Module -Name Az.Accounts, Az.Resources -Scope CurrentUser -Force -SkipPublisherCheck
+
+          - task: PowerShell@2
+            displayName: Run Azure -> TopDesk sync
+            inputs:
+              targetType: inline
+              pwsh: true
+              script: |
+                & "$(System.DefaultWorkingDirectory)/samples/azure-topdesk-sync/src/Sync-AzureTagsToTopdesk.ps1"
+            env:
+              AZURE_CLIENT_ID: $(AZURE_CLIENT_ID)
+              AZURE_CLIENT_SECRET: $(AZURE_CLIENT_SECRET)
+              AZURE_TENANT_ID: $(AZURE_TENANT_ID)
+              AZURE_SUBSCRIPTION_ID: $(AZURE_SUBSCRIPTION_ID)
+              TOPDESK_URL: $(TOPDESK_URL)
+              TOPDESK_USERNAME: $(TOPDESK_USERNAME)
+              TOPDESK_APP_PASSWORD: $(TOPDESK_APP_PASSWORD)

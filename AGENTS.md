@@ -16,6 +16,7 @@ Beginner-friendly course teaching GitHub Copilot CLI. Educational content, not s
 | `samples/mcp-configs/` | MCP server configuration examples |
 | `samples/buggy-code/` | **Optional extra**: Security-focused buggy code (JS and Python) |
 | `samples/src/` | **Optional extra**: Legacy JS/React samples from earlier course version |
+| `samples/azure-topdesk-sync/` | **Standalone automation sample** (PowerShell): syncs Azure resource tags into TopDesk CMDB CIs via a scheduled Azure DevOps pipeline; not part of the book-app course flow |
 | `appendices/` | Supplementary reference material |
 
 ## Do

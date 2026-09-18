@@ -1,0 +1,29 @@
+{
+  "$comment": "Configuration for the Azure tags -> TopDesk CMDB sync. Edit these values for your tenant; do not put secrets here.",
+
+  "resourceTypes": [
+    "Microsoft.Compute/virtualMachines",
+    "Microsoft.Storage/storageAccounts",
+    "Microsoft.KeyVault/vaults",
+    "Microsoft.Web/sites"
+  ],
+
+  "resourceTypeNotes": {
+    "Microsoft.Web/sites": "Function Apps are ARM type Microsoft.Web/sites with kind 'functionapp'. The reader module filters on kind for this type."
+  },
+
+  "tagToTopdeskField": {
+    "Owner": "owner",
+    "Team": "team"
+  },
+
+  "topdeskCiLookup": {
+    "matchOn": "name",
+    "description": "Field used to find the matching TopDesk CI for an Azure resource. 'name' matches the Azure resource name against the TopDesk CI's 'name' field. Change to another CI field/value (e.g. an external/reference id) if your TopDesk tenant uses a different key."
+  },
+
+  "scope": {
+    "description": "Restrict which resources are read. Leave resourceGroups empty to scan the whole subscription set in AZURE_SUBSCRIPTION_ID.",
+    "resourceGroups": []
+  }
+}
